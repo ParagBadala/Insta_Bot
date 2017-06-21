@@ -112,12 +112,56 @@ def get_own_post():
         print 'Status code other than 200 received!'
 
 
-# Function to get the recent post of a user by username
+# Function to get post with maximum likes
+
+def max_like(user_media):
+    like=0
+    for x in range(0,len(user_media['data'])):
+        if(like<user_media['data'][x]['likes']['count']):
+            like=user_media['data'][x]['likes']['count']
+            z=x
+    if(like==0):
+        print(colored("All post of user have ZERO likes, So getting the most recent post",'red'))
+        recent_post(user_media)
+    else:
+        image_name = user_media['data'][z]['id'] + '.jpeg'
+        image_url = user_media['data'][z]['images']['standard_resolution']['url']
+        urllib.urlretrieve(image_url, image_name)
+        print (colored('Your image with most number of likes has been downloaded!','red'))
+
+
+# Function to get post with minimum likes
+
+def min_like(user_media):
+    like = 999999
+    for x in range(0, len(user_media['data'])):
+        if (like > user_media['data'][x]['likes']['count']):
+            like = user_media['data'][x]['likes']['count']
+            z = x
+    if (like == 0):
+        print(colored("All post of user have ZERO likes, So getting the most recent post", 'red'))
+        recent_post(user_media)
+    else:
+        image_name = user_media['data'][z]['id'] + '.jpeg'
+        image_url = user_media['data'][z]['images']['standard_resolution']['url']
+        urllib.urlretrieve(image_url, image_name)
+        print (colored('Your image with minimum number of likes has been downloaded!', 'red'))
+
+
+# Function for getting most recent post
+
+def recent_post(user_media):
+    image_name = user_media['data'][0]['id'] + '.jpeg'
+    image_url = user_media['data'][0]['images']['standard_resolution']['url']
+    urllib.urlretrieve(image_url, image_name)
+    print (colored('Your image has been downloaded!','red'))
+
+# Function to get the post of a user by username
 
 def get_user_post(insta_username):
     user_id = get_user_id(insta_username)
     if user_id == None:
-        print 'User does not exist!'
+        print("User does not exist!")
         exit()
     request_url = (BASE_URL + 'users/%s/media/recent/?access_token=%s') % (user_id, ACCESS_TOKEN)
     print 'GET request url : %s' % (request_url)
@@ -125,14 +169,90 @@ def get_user_post(insta_username):
 
     if user_media['meta']['code'] == 200:
         if len(user_media['data']):
-            image_name = user_media['data'][0]['id'] + '.jpeg'
-            image_url = user_media['data'][0]['images']['standard_resolution']['url']
-            urllib.urlretrieve(image_url, image_name)
-            print 'Your image has been downloaded!'
+
+            while True:
+                print"\n"
+                print(colored("---------------SELECT THE OPTION--------------------\n",'green'))
+                print("1.Get the post with maximum likes")
+                print("2.Get the post with minimum likes")
+                #print("3.Get the most recent post liked by the user")
+                print("4.Get the most recent post")
+                print("5.Return to main menu")
+                select=int(raw_input("Enter the choice"))
+                if select==1:
+                    max_like(user_media)
+                elif select==2:
+                    min_like(user_media)
+                elif select==4:
+                    recent_post(user_media)
+                elif select==5:
+                    break;
+                else:
+                    print("Invalid choice")
         else:
-            print 'Post does not exist!'
+            print("Post does not exist!")
     else:
-        print 'Status code other than 200 received!'
+        print("Status code other than 200 received!")
+
+
+# Function declaration to get the ID of the recent post of a user by username
+
+def get_post_id(insta_username):
+    user_id = get_user_id(insta_username)
+    if user_id == None:
+        print("User does not exist!")
+        exit()
+    request_url = (BASE_URL + 'users/%s/media/recent/?access_token=%s') % (user_id, ACCESS_TOKEN)
+    print 'GET request url : %s' % (request_url)
+    user_media = requests.get(request_url).json()
+
+    if user_media['meta']['code'] == 200:
+        if len(user_media['data']):
+            return user_media['data'][0]['id']
+        else:
+            print("There is no recent post of the user!")
+            exit()
+    else:
+        print("Status code other than 200 received!")
+        exit()
+
+# Function to fetch the user who have liked the recent post
+
+def get_like_list(insta_username):
+    post_id = get_post_id(insta_username)
+    request_url = (BASE_URL+ 'media/%s/likes?access_token=%s') % (post_id,ACCESS_TOKEN)
+    likes_info = requests.get(request_url).json()
+
+    if likes_info['meta']['code'] == 200:
+        if len(likes_info['data']):
+            print(colored("People likes the post are :","red"))
+            for x in range(0,len(likes_info['data'])):
+                print(likes_info['data'][x]['username'])
+        else:
+            print("No user have liked the post ")
+    else:
+        print("Status code other than 200 received!")
+
+
+
+
+
+
+# Function to like the recent post of a user
+
+def like_a_post(insta_username):
+    media_id = get_post_id(insta_username)
+    request_url = (BASE_URL + 'media/%s/likes') % (media_id)
+    payload = {"access_token": ACCESS_TOKEN}
+    print 'POST request url : %s' % (request_url)
+    post_a_like = requests.post(request_url, payload).json()
+    if post_a_like['meta']['code'] == 200:
+        print(colored("Like was successful!","red"))
+    else:
+        print(colored("Your like was unsuccessful. Try again!","red"))
+
+
+
 
 
 def start_bot():
@@ -143,8 +263,9 @@ def start_bot():
         print ("2.Get details of a user by username")
         print ("3.Get your own recent post")
         print ("4.Get the recent post of a user by username")
-
-        print ("5.Exit\n")
+        print ("5.Get a list of people who have liked the recent post of a user")
+        print ("6.Like the recent post of a user")
+        print ("7.Exit\n")
 
         choice=int(raw_input("Enter you choice: "))
         if choice==1:
@@ -159,6 +280,12 @@ def start_bot():
             insta_username = raw_input("Enter the username of the user : ")
             get_user_post(insta_username)
         elif choice==5:
+            insta_username = raw_input("Enter the username of the user: ")
+            get_like_list(insta_username)
+        elif choice == 6:
+            insta_username = raw_input("Enter the username of the user: ")
+            like_a_post(insta_username)
+        elif choice==7:
             exit()
         else:
             print (colored("Invalid choice","red"))
@@ -174,7 +301,7 @@ print ""
 print (colored('*******************Hey! Welcome to InstaBot!*******************************','blue'))
 print ('\n')
 
-
-
+#asking username for which bot will perform action
+#insta_username = raw_input("Enter the username of the user : ")
 start_bot()
 
