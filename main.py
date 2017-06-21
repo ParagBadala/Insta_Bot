@@ -216,6 +216,24 @@ def get_post_id(insta_username):
         print("Status code other than 200 received!")
         exit()
 
+# Function to get recent media liked by the user
+
+def recent_post_like():
+    request_url = (BASE_URL + 'users/self/media/liked?access_token=%s') % (ACCESS_TOKEN)
+    print 'GET request url : %s' % (request_url)
+    own_media = requests.get(request_url).json()
+    if own_media['meta']['code'] == 200:
+        if len(own_media['data']):
+            image_name = own_media['data'][0]['id'] + '.jpeg'
+            image_url = own_media['data'][0]['images']['standard_resolution']['url']
+            urllib.urlretrieve(image_url, image_name)
+            print(colored("Your image has been downloaded!","red"))
+        else:
+            print(colored("Post does not exist!","red"))
+    else:
+        print(colored("Status code other than 200 received!","red"))
+
+
 # Function to fetch the user who have liked the recent post
 
 def get_like_list(insta_username):
@@ -246,13 +264,45 @@ def like_a_post(insta_username):
     payload = {"access_token": ACCESS_TOKEN}
     print 'POST request url : %s' % (request_url)
     post_a_like = requests.post(request_url, payload).json()
+
     if post_a_like['meta']['code'] == 200:
         print(colored("Like was successful!","red"))
     else:
         print(colored("Your like was unsuccessful. Try again!","red"))
 
+#Function to get list of comments
+
+def get_comment_list(insta_username):
+    media_id = get_post_id(insta_username)
+    request_url = (BASE_URL+ 'media/%s/comments?access_token=%s') % (media_id, ACCESS_TOKEN)
+    comment_info = requests.get(request_url).json()
+
+    if comment_info['meta']['code'] == 200 :
+        if len(comment_info['data']):
+            print(colored("COMMENTS ON THE POST ARE :","red"))
+            for x in range(0,len(comment_info['data'])):
+                print("Comments : %s  || User : %s") % (comment_info['data'][x]['text'],comment_info['data'][x]['from']['username'])
+        else:
+            print(colored("No comments on this post","red"))
+    else:
+        print(colored("Status code other than 200 received","red"))
 
 
+# Function to make a comment on recent post
+
+def post_a_comment(insta_username):
+    media_id = get_post_id(insta_username)
+    comment_text = raw_input("Give comment: ")
+    payload = {"access_token": ACCESS_TOKEN, "text" : comment_text}
+    request_url = (BASE_URL + 'media/%s/comments') % (media_id)
+    print 'POST request url : %s' % (request_url)
+
+    make_comment = requests.post(request_url, payload).json()
+
+    if make_comment['meta']['code'] == 200:
+        print (colored("Successfully added a new comment!","red"))
+    else:
+        print (colored("Unable to add comment. Try again!","red"))
 
 
 def start_bot():
@@ -263,9 +313,12 @@ def start_bot():
         print ("2.Get details of a user by username")
         print ("3.Get your own recent post")
         print ("4.Get the recent post of a user by username")
-        print ("5.Get a list of people who have liked the recent post of a user")
-        print ("6.Like the recent post of a user")
-        print ("7.Exit\n")
+        print ("5.Get the recent post liked by the user ")
+        print ("6.Get a list of people who have liked the recent post of a user")
+        print ("7.Like the recent post of a user")
+        print ("8.List the comments on the post")
+        print ("9.Post the comment")
+        print ("10.Exit\n")
 
         choice=int(raw_input("Enter you choice: "))
         if choice==1:
@@ -280,12 +333,20 @@ def start_bot():
             insta_username = raw_input("Enter the username of the user : ")
             get_user_post(insta_username)
         elif choice==5:
+            recent_post_like()
+        elif choice==6:
             insta_username = raw_input("Enter the username of the user: ")
             get_like_list(insta_username)
-        elif choice == 6:
+        elif choice == 7:
             insta_username = raw_input("Enter the username of the user: ")
             like_a_post(insta_username)
-        elif choice==7:
+        elif choice==8:
+            insta_username = raw_input("Enter the username of the user : ")
+            get_comment_list(insta_username)
+        elif choice==9:
+            insta_username = raw_input("Enter the username of the user : ")
+            post_a_comment(insta_username)
+        elif choice==10:
             exit()
         else:
             print (colored("Invalid choice","red"))
