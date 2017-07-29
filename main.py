@@ -341,6 +341,30 @@ def delete_negative_comment(insta_username):
     else:
         print(colored("Status code other than 200 received!","red"))
 
+# Function to do targeted comment
+
+def targeted_comment():
+    tag = raw_input("Enter the hashtag photo you need : ")
+    comment_text = raw_input("Enter the comment : ")
+    request_url = (BASE_URL+ 'tags'+ tag+ '/media/recent?access_token=') % (ACCESS_TOKEN)
+    print 'GET request url : %s' % (request_url)
+    targeted_comment_info = requests.get(request_url).json()
+    payload = {"access_token": ACCESS_TOKEN, "text": comment_text}
+
+    if targeted_comment_info['meta']['code'] == 200:
+        if len(targeted_comment_info['data']):
+            for x in range(0,len(targeted_comment_info['data'])):
+                media_id = targeted_comment_info['data'][x]['id']
+                request_url = (BASE_URL + 'media/%s/comments') % (media_id)
+                make_comment = requests.post(request_url, payload).json()
+                if make_comment['meta']['code'] == 200:
+                    print (colored("Successfully added a new comment!", "red"))
+                else:
+                    print (colored("Unable to add comment. Try again!", "red"))
+
+
+
+
 def start_bot():
     while True:
         print (colored('*******************Here are your menu options:*****************************', 'blue'))
@@ -355,7 +379,8 @@ def start_bot():
         print ("8.List the comments on the post")
         print ("9.Post the comment")
         print ("10.Delete the negative comment")
-        print ("11.Exit\n")
+        print ("11.Do targeted comment")
+        print ("12.Exit\n")
 
         choice=int(raw_input("Enter you choice: "))
         if choice==1:
@@ -386,7 +411,9 @@ def start_bot():
         elif choice==10:
             insta_username = raw_input("Enter the username of the user : ")
             delete_negative_comment(insta_username)
-        elif choice==11:
+   #     elif choice ==11:
+    #        targeted_comment()
+        elif choice==12:
             exit()
         else:
             print (colored("Invalid choice","red"))
